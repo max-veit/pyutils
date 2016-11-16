@@ -86,7 +86,8 @@ def thin_points(data, density=None, len_scale=0.01, nmax=None, r=None):
     nmax        Maximum number of neighbours for a point
     r           Absolute length scale of distance averaging (radius of
                 sphere within which neighbours are counted)
-
+    Note that setting nmax=1 will ensure that no two points are closer
+    than r
 
     NB density only implemented in two dimensions (i.e. d==2).
 
@@ -115,14 +116,14 @@ def thin_points(data, density=None, len_scale=0.01, nmax=None, r=None):
         del_idx = int(np.random.choice(np.arange(len(neighcounts))[
             (neighcounts > nmax) & ~deleted]))
         deleted[del_idx] = True
-        neighcounts[pairs[del_idx]] -= 1
-        neighcounts[del_idx] = 0
         # Try just dividing the deleted weight equally among neighbours
         # (could also try only assigning to nearest neighbour, or something
         # in between)
         point_weight[pairs[del_idx]] += (point_weight[del_idx] * 1.0 /
-                                         (len(pairs[del_idx]) - 1))
+                                         neighcounts[del_idx])
         point_weight[del_idx] = 0
+        neighcounts[pairs[del_idx]] -= 1
+        neighcounts[del_idx] = 0
         print(np.sum(point_weight[~deleted]))
         # TODO Remove the deleted point from others' neighbour lists?
         #      Operation cost versus leaving it there?

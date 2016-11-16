@@ -3,6 +3,7 @@
 Contents:
 scatter_outliers    Make a scatterplot, marking outliers at the edges
 thin_points         Thin data points that are too close to each other
+scatter_thin_points Plot a set of thinned data points with weight info
 
 """
 
@@ -11,9 +12,6 @@ import matplotlib
 from matplotlib import pyplot
 import numpy as np
 from scipy.spatial import KDTree
-
-# Progress!
-import tqdm
 
 
 def escatter_outliers(xs, ys, xlim, ylim, ax=None, c_out='r', s_out=40,
@@ -70,9 +68,10 @@ def escatter_outliers(xs, ys, xlim, ylim, ax=None, c_out='r', s_out=40,
 def thin_points(data, density=None, len_scale=0.01, nmax=None, r=None):
     """Thin a set of data points down to some target density.
 
-    Uses "seedling" thinning algorithm: Go through all points; if any
-    have more than a certain number of neighbours within some predefined
-    radius, remove them.  Repeat until desired density is achieved.
+    Uses "seedling" thinning algorithm: Pick a point; if it has more
+    than a certain number of neighbours within some predefined radius,
+    remove it.  Repeat until no points have more than the deisred number
+    of neighbours.
 
     Parameters:
     data        Matrix, size (N,d) - N is num points, d is problem
@@ -121,10 +120,8 @@ def thin_points(data, density=None, len_scale=0.01, nmax=None, r=None):
         # in between)
         point_weight[pairs[del_idx]] += (point_weight[del_idx] * 1.0 /
                                          neighcounts[del_idx])
-        point_weight[del_idx] = 0
         neighcounts[pairs[del_idx]] -= 1
         neighcounts[del_idx] = 0
-        print(np.sum(point_weight[~deleted]))
         # TODO Remove the deleted point from others' neighbour lists?
         #      Operation cost versus leaving it there?
     return data[~deleted,:], point_weight[~deleted]
@@ -150,8 +147,9 @@ def scatter_thin_points(data_thin, weights, method='size', ax=None,
     if method == 'size':
         # TODO An automatic determination of the base size based on the
         #      actual plot size (in pixels) might be nice...
-        s_scale = plot_args.pop('s', 10)
-        pl = ax.scatter(data_thin[:,0], data_thin[:,1], linewidth=0,
+        s_scale = plot_args.pop('s', 2)
+        # Retain the border (linewidth) to make it easier to see points' sizes
+        pl = ax.scatter(data_thin[:,0], data_thin[:,1],
                         s=(weights * s_scale), **plot_args)
     elif method == 'color':
         plot_args.pop('c', None)

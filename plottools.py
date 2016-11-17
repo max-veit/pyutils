@@ -200,7 +200,7 @@ def scatter_outliers_size(data_thin, weights, xlim, ylim, ax=None, c_out='r',
     (orig, top, bottom, left, right)
 
     """
-    pl = scatter_thin_points(data_thin, weights, ax=ax)
+    pl = scatter_thin_points(data_thin, weights, ax=ax, **plot_args)
     outps = scatter_mark_outliers(
         *data_thin.T, xlim=xlim, ylim=ylim, ax=ax, c=c_out, s=s_out)
     return (pl,) + outps

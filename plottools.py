@@ -17,7 +17,7 @@ import numpy as np
 from scipy.spatial import KDTree
 
 
-def thin_points(data, density=None, len_scale=0.01, nmax=None, r=None):
+def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     """Thin a set of data points down to some target density.
 
     Uses "seedling" thinning algorithm: Pick a point; if it has more
@@ -26,28 +26,32 @@ def thin_points(data, density=None, len_scale=0.01, nmax=None, r=None):
     of neighbours.
 
     Parameters:
-    data        Matrix, size (N,d) - N is num points, d is problem
+    data        Data matrix, size (N,d) - N is num points, d is problem
                 dimensionality
     Specify either:
     density     Target density, maximum density in thinned set
+        with optional:
     len_scale   Length scale of density averaging, as a fraction of the
                 range in the data (maximum range along any dimension).
                 Default 0.01.
-    or both of:
-    nmax        Maximum number of neighbours for a point
+    or:
     r           Absolute length scale of distance averaging (radius of
                 sphere within which neighbours are counted)
-    Note that setting nmax=1 will ensure that no two points are closer
-    than r
+        with optional:
+    nmax        Maximum number of neighbours for a point (default 1)
+
+    Note that the default of nmax=1 ensures that no two points are
+    closer than r, thinning points to a maximum (approximately uniform)
+    density of 1/r^dim
 
     NB density only implemented in two dimensions (i.e. d==2).
 
     """
     dim = data.shape[1]
-    if density is None and dim != 2:
+    if density is None and r is None:
+        raise ValueError("Must specify r if not using density")
+    elif density is not None and dim != 2:
         raise NotImplementedError("Density not implemented for dimension != 2")
-    elif density is None and (nmax is None or r is None):
-        raise ValueError("Must specify both nmax and r if not using density")
     elif density is not None:
         # Choose nmax and r such that r is about 1/100 of the range of
         # the data, but make nmax an integer.

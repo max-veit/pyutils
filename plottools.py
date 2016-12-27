@@ -20,10 +20,10 @@ from scipy.spatial import KDTree
 def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     """Thin a set of data points down to some target density.
 
-    Uses "seedling" thinning algorithm: Pick a point; if it has more
-    than a certain number of neighbours within some predefined radius,
-    remove it.  Repeat until no points have more than the deisred number
-    of neighbours.
+    Uses "poisonous seedling" thinning algorithm: Pick a point at
+    random, and if it has more than a certain number of neighbours
+    within some predefined radius, randomly remove neighbours until the
+    number is reached.  Repeat in turn for all the remaining points.
 
     Parameters:
     data        Data matrix, size (N,d) - N is num points, d is problem
@@ -61,25 +61,24 @@ def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     # Technically the leafsize should be equal to the ratio of volumes of the
     # d-cube to the d-sphere times nmax, but I think this is good enough.
     neightree = KDTree(data, leafsize=max(20, int(nmax) * 2))
-    pairs = neightree.query_ball_tree(neightree, r)
-    # Remember, a neighbour list will include itself, so exclude that in
-    # the counts
-    neighcounts = np.array([len(neighlist) - 1 for neighlist in pairs])
-    deleted = np.zeros_like(neighcounts, dtype=bool)
-    point_weight = np.ones_like(neighcounts, dtype=np.float32)
-    while np.any(neighcounts > nmax):
-        del_idx = int(np.random.choice(np.arange(len(neighcounts))[
-            (neighcounts > nmax) & ~deleted]))
-        deleted[del_idx] = True
-        # Try just dividing the deleted weight equally among neighbours
-        # (could also try only assigning to nearest neighbour, or something
-        # in between)
-        point_weight[pairs[del_idx]] += (point_weight[del_idx] * 1.0 /
-                                         neighcounts[del_idx])
-        neighcounts[pairs[del_idx]] -= 1
-        neighcounts[del_idx] = 0
-        # TODO Remove the deleted point from others' neighbour lists?
-        #      Operation cost versus leaving it there?
+    deleted = np.zeros((data.shape[0], ), dtype=bool)
+    point_weight = np.ones((data.shape[0], ), dtype=np.float32)
+    idces = np.arange(data.shape[0])
+    np.random.shuffle(idces)
+    for data_idx in idces:
+        if deleted[data_idx]:
+            continue
+        # TODO adjust eps for efficiency?
+        neighbours = neightree.query_ball_point(data[data_idx,:], r, eps=0.0)
+        neighbours.remove(data_idx)
+        if nmax == 1:
+            del_idces = neighbours
+        else:
+            del_idces = np.random.choice(neighbours,
+                                         len(neighbours) - nmax + 1)
+        deleted[del_idces] = True
+        point_weight[data_idx] += np.sum(point_weight[del_idces])
+        point_weight[del_idces] = 0
     return data[~deleted,:], point_weight[~deleted]
 
 

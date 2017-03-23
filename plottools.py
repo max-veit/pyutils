@@ -17,6 +17,47 @@ import numpy as np
 from scipy.spatial import KDTree
 
 
+# Matplotlib params for report-quality plots
+params_orig = mpl.rcParams.copy()
+params_reports = {
+    'font.family': 'TeX Gyre Schola',
+    'font.size': 10,
+    'legend.fontsize': 'small',
+    'axes.labelsize': 'small',
+    #'font.serif': ['New Century Schoolbook', 'CMU Serif'],
+    'font.sans-serif': [],
+    'mathtext.default': 'regular',
+    'pgf.texsystem': 'pdflatex',
+    'pgf.preamble': ['\\usepackage{siunitx}'],
+    'figure.figsize': (6.0, 3.7)
+    #'savefig.dpi': 150,
+}
+params_poster_a0 = dict(params_reports)
+params_poster_a0.update({
+    'font.size': 25,
+    'figure.figsize': (12.0, 8.0),
+    'font.family': 'serif',
+    'font.serif': ['Linux Libertine', 'CMU Serif'],
+    'font.sans-serif': [],
+    'legend.fontsize': 'large',
+    'axes.labelsize': 'large',
+})
+
+
+# Some colours for easily distinguishable and colourblind-friendly coding
+# Use the 4th colour if necessary; may not be colourblind-friendly though
+# from colorbrewer.org
+colors = {}
+colors['green'] = '#1b9e77'
+colors['orange'] = '#d95f02'
+colors['purple'] = '#7570b3'
+colors['pink'] = '#e7298a'
+def update_color_cycle():
+    mpl.rcParams.update({'axes.color_cycle': [colors['purple'],
+                                              colors['orange'],
+                                              colors['green']]})
+
+
 def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     """Thin a set of data points down to some target density.
 

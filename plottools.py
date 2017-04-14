@@ -1,6 +1,13 @@
 """Plot tools: Reusable utilities for working with matplotlib plots.
 
-Contents:
+Members:
+params_(reports|poster|...)
+                    Standard parameter sets for final-quality plots
+colors              Easily distinguishable color sets
+
+Functions:
+update_color_cycle  Use the distinguishable colors by default
+plot_smoothed       Plot a time series smoothed with a cosine kernel
 thin_points         Thin data points that are too close to each other
 scatter_thin_points Plot a set of thinned data points with weight info
 scatter_mark_outliers
@@ -14,6 +21,7 @@ scatter_outliers_size
 import matplotlib as mpl
 from matplotlib import pyplot
 import numpy as np
+from scipy import signal
 from scipy.spatial import KDTree
 
 
@@ -56,6 +64,24 @@ def update_color_cycle():
     mpl.rcParams.update({'axes.color_cycle': [colors['purple'],
                                               colors['orange'],
                                               colors['green']]})
+
+
+def plot_smoothed(time, data, avg_period, **plot_args):
+    """Plot a time series smoothed with a cosine kernel
+
+    Parameters:
+        time        Array of equally spaced time points
+        data        Array of data to plot at those times
+        avg_period  Number of time points to average over
+                    (width of the averaging kernel)
+        plot_args   Any additional arguments to pass to pyplot.plot()
+    """
+    print("Averaging period: {:g} fs".format(avg_period * (time[1] - time[0])))
+    #krnl = np.ones(avg_period) / avg_period
+    krnl = signal.cosine(avg_period)
+    krnl = krnl / np.sum(krnl)
+    data_ma = np.convolve(data, krnl, mode='valid')
+    pyplot.plot(time[avg_period/2:-(avg_period/2 - 1)], data_ma, **plot_args)
 
 
 def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):

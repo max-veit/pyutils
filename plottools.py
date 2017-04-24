@@ -66,7 +66,7 @@ def update_color_cycle():
                                               colors['green']]})
 
 
-def plot_smoothed(time, data, avg_period, **plot_args):
+def plot_smoothed(time, data, avg_period, ax=None, **plot_args):
     """Plot a time series smoothed with a cosine kernel
 
     Parameters:
@@ -74,6 +74,7 @@ def plot_smoothed(time, data, avg_period, **plot_args):
         data        Array of data to plot at those times
         avg_period  Number of time points to average over
                     (width of the averaging kernel)
+        ax          Axes to plot into (default: current/new Axes)
         plot_args   Any additional arguments to pass to pyplot.plot()
     """
     print("Averaging period: {:g} fs".format(avg_period * (time[1] - time[0])))
@@ -81,7 +82,9 @@ def plot_smoothed(time, data, avg_period, **plot_args):
     krnl = signal.cosine(avg_period)
     krnl = krnl / np.sum(krnl)
     data_ma = np.convolve(data, krnl, mode='valid')
-    pyplot.plot(time[avg_period/2:-(avg_period/2 - 1)], data_ma, **plot_args)
+    if ax is None:
+        ax = pyplot.gca()
+    ax.plot(time[avg_period/2:-(avg_period/2 - 1)], data_ma, **plot_args)
 
 
 def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):

@@ -1,6 +1,6 @@
 """Plot tools: Reusable utilities for working with matplotlib plots.
 
-Members:
+Contents:
 params_(reports|poster|...)
                     Standard parameter sets for final-quality plots
 colors              Easily distinguishable color sets

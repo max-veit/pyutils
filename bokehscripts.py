@@ -1,4 +1,4 @@
-#vim: set enc=utf-8
+#vim: set encoding=utf-8
 """Scripts for making certain plots with Bokeh (bokeh.pydata.org)
 
 Contents:
@@ -45,7 +45,7 @@ def plot_acorr(time, data, step_start, sample_dt, corr_guess,
     data_zeromean = data[step_start:] - np.mean(data[step_start:])
     n = len(data_zeromean)
     dataacorr = (signal.correlate(data_zeromean, data_zeromean, 'same')
-                 / (n - np.abs(arange(n) - n//2)))
+                 / (n - np.abs(np.arange(n) - n//2)))
     window_width = int(corr_guess * 6.0 / sample_dt)
     acorr_int = 0.5 * np.sum(
         dataacorr[n//2 - window_width : n//2 + window_width + 1]) * sample_dt
@@ -63,7 +63,7 @@ def plot_acorr(time, data, step_start, sample_dt, corr_guess,
         name="Correlation time")
     p.add_layout(corr_time_region)
     p.xaxis.axis_label = xlabel
-    p.yaxis.axis_label = "Unnormalized autocorrelation C(t)"
+    p.yaxis.axis_label = ylabel
     hovertool = bkm.HoverTool(tooltips=[('Time', '$x'), ('Correlation', '$y')])
     p.add_tools(hovertool)
     bkp.show(p)

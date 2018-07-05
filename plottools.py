@@ -1,3 +1,4 @@
+#vim: set encoding=utf-8
 """Plot tools: Reusable utilities for working with matplotlib plots.
 
 Contents:
@@ -6,9 +7,10 @@ params_(reports|poster|...)
 colors              Easily distinguishable color sets
 
 Functions:
-update_color_cycle  Use the distinguishable colors by default
 plot_smoothed       Plot a time series smoothed with a cosine kernel
+plot_acorr          Plot the autocorrelation of a timeseries
 thin_points         Thin data points that are too close to each other
+thin_transformed    Thin data points in a transformed space
 scatter_thin_points Plot a set of thinned data points with weight info
 scatter_mark_outliers
                     Mark outliers at the edges of a scatterplot
@@ -18,6 +20,10 @@ scatter_outliers_size
 """
 
 
+from __future__ import unicode_literals, print_function, division
+
+import logging
+
 import matplotlib as mpl
 from matplotlib import pyplot
 import numpy as np
@@ -25,45 +31,19 @@ from scipy import signal
 from scipy.spatial import KDTree
 
 
-# Matplotlib params for report-quality plots
-params_orig = mpl.rcParams.copy()
-params_reports = {
-    'font.family': 'TeX Gyre Schola',
-    'font.size': 10,
-    'legend.fontsize': 'small',
-    'axes.labelsize': 'small',
-    #'font.serif': ['New Century Schoolbook', 'CMU Serif'],
-    'font.sans-serif': [],
-    'mathtext.default': 'regular',
-    'pgf.texsystem': 'pdflatex',
-    'pgf.preamble': ['\\usepackage{siunitx}'],
-    'figure.figsize': (6.0, 3.7)
-    #'savefig.dpi': 150,
-}
-params_poster_a0 = dict(params_reports)
-params_poster_a0.update({
-    'font.size': 25,
-    'figure.figsize': (12.0, 8.0),
-    'font.family': 'serif',
-    'font.serif': ['Linux Libertine', 'CMU Serif'],
-    'font.sans-serif': [],
-    'legend.fontsize': 'large',
-    'axes.labelsize': 'large',
-})
+logger = logging.getLogger(__name__)
 
 
 # Some colours for easily distinguishable and colourblind-friendly coding
 # Use the 4th colour if necessary; may not be colourblind-friendly though
 # from colorbrewer.org
-colors = {}
-colors['green'] = '#1b9e77'
-colors['orange'] = '#d95f02'
-colors['purple'] = '#7570b3'
-colors['pink'] = '#e7298a'
-def update_color_cycle():
-    mpl.rcParams.update({'axes.color_cycle': [colors['purple'],
-                                              colors['orange'],
-                                              colors['green']]})
+cb_colors = {}
+cb_colors['green'] = '#1b9e77'
+cb_colors['orange'] = '#d95f02'
+cb_colors['purple'] = '#7570b3'
+cb_colors['pink'] = '#e7298a'
+cb_color_cycle = mpl.rcsetup.cycler(
+    'c', [cb_colors[key] for key in ['purple', 'orange', 'green', 'pink']])
 
 
 def plot_smoothed(time, data, avg_period, ax=None, **plot_args):
@@ -77,7 +57,8 @@ def plot_smoothed(time, data, avg_period, ax=None, **plot_args):
         ax          Axes to plot into (default: current/new Axes)
         plot_args   Any additional arguments to pass to pyplot.plot()
     """
-    print("Averaging period: {:g} fs".format(avg_period * (time[1] - time[0])))
+    logger.info("Averaging period: {:g} fs".format(
+        avg_period * (time[1] - time[0])))
     #krnl = np.ones(avg_period) / avg_period
     krnl = signal.cosine(avg_period)
     krnl = krnl / np.sum(krnl)
@@ -87,6 +68,62 @@ def plot_smoothed(time, data, avg_period, ax=None, **plot_args):
     ax.plot(time[avg_period/2:-(avg_period/2 - 1)], data_ma, **plot_args)
 
 
+def plot_acorr(time, data, step_start, sample_dt, corr_guess, axes=None,
+               **plot_args):
+    """Plot the autocorrelation of a timeseries and show its integral
+
+    The integral is useful for estimating the error on the mean of a
+    correlated timeseries, see Sokal's lecture on Monte Carlo methods for
+    more information.
+
+    Parameters:
+        time        Time values of the timeseries
+                    Must be sequential and equally spaced
+        data        Data of the timeseries
+        step_start  Step (array index) at which to start computing
+                    averages and correlation
+        sample_dt   Time between two successive samples
+        corr_guess  Guess for the correlation time of the series
+
+    Optional parameters:
+        axes        Matplotlib axes to plot into.  Leaving it as None will
+                    plot into the current axes (or create a new one if none
+                    exists yet)
+    Remaining keyword arguments are passed to the plot() command used to
+    create the autocorrelation trace.
+
+    Returns:
+        mean        Mean of data in range (after `step_start`)
+        serr        Standard error on mean
+                    (accounting for autocorrelation)
+        n_eff       Number of effective independent samples
+        corr_time   Integrated correlation time
+    """
+    logger.info("Starting from time {:.2f}".format(time[step_start]))
+    data_mean = np.mean(data[step_start:])
+    data_zeromean = data[step_start:] - np.mean(data[step_start:])
+    n = len(data_zeromean)
+    dataacorr = (signal.correlate(data_zeromean, data_zeromean, 'same')
+                 / (n - np.abs(np.arange(n) - n//2)))
+    window_width = int(corr_guess * 6.0 / sample_dt)
+    acorr_int = 0.5 * np.sum(
+        dataacorr[n//2 - window_width : n//2 + window_width + 1]) * sample_dt
+    corr_time = acorr_int / dataacorr[n//2]
+    serr_mean = np.sqrt(2.0 * acorr_int / n / sample_dt)
+    n_eff = n / 2 / corr_time * sample_dt
+    if axes is None:
+        axes = pyplot.gca()
+    axes.plot(time[step_start:] - time[n//2 + step_start],
+              dataacorr)
+    axes.grid()
+    axes.axvspan(-1.*time[window_width], time[window_width], fc='k', alpha=0.2,
+                 label="Integration region")
+    axes.axvspan(-1.*corr_time, corr_time, fc='r', alpha=0.3,
+                 label="Correlation time")
+    axes.set_xlim(-12.0 * corr_guess, 12.0 * corr_guess)
+    return data_mean, serr_mean, n_eff, corr_time
+
+
 def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     """Thin a set of data points down to some target density.
 
@@ -94,6 +131,11 @@ def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     random, and if it has more than a certain number of neighbours
     within some predefined radius, randomly remove neighbours until the
     number is reached.  Repeat in turn for all the remaining points.
+
+    If the data has an extreme aspect ratio (either the ratio or its
+    reciprocal greater than about 1.5), or is to be plotted with one or
+    both axes on a log scale, the function thin_transformed() will usually
+    produce better results (NB only for data in 2-D space).
 
     Parameters:
     data        Data matrix, size (N,d) - N is num points, d is problem
@@ -112,7 +154,8 @@ def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
 
     Note that the default of nmax=1 ensures that no two points are
     closer than r, thinning points to a maximum (approximately uniform)
-    density of 1/r^dim
+    density of 1/r^dim.  This mode of use seems to produce the best
+    results in practice.
 
     NB density only implemented in two dimensions (i.e. d==2).
 
@@ -152,6 +195,51 @@ def thin_points(data, r=None, nmax=1, density=None, len_scale=0.01):
     return data[~deleted,:], point_weight[~deleted]
 
 
+def thin_transformed(data_full, equalize_aspect=True, aspect=None,
+                     do_y_log=False, do_x_log=False, **thin_params):
+    """Apply the thinning algorithm in a transformed 2-D data space
+
+    Data points are always returned in the original (untransformed)
+    space
+
+    Parameters:
+        equalize_aspect   Equalize the aspect ratio (decided by the
+                          range of the data, or aspect if given)
+                          before thinning
+        aspect            Manually specify aspect ratio (width / height)
+                          of the data (or log-data if thinning in log space)
+        do_y_log          Take the log of the data (y-coordinates)
+                          before thinning
+        do_x_log          Take the log of the data (x-coordinates)
+                          before thinning
+    Other keyword arguments are passed on to thin_points().  Note in
+    particular that the 'r' parameter is in X axis units.
+    """
+    if data.shape[1] != 2:
+        raise ValueError("This function is designed to work in 2-D space; "
+                         "got data.shape[1] == {:d} instead.".format(
+                             data.shape[1]))
+    data_trans = data_full.copy()
+    if do_y_log:
+        data_trans[:,1] = np.log(data_trans[:,1])
+    if do_x_log:
+        data_trans[:,0] = np.log(data_trans[:,0])
+    if equalize_aspect and (aspect is None):
+        data_range = np.max(data_trans, axis=0) - np.min(data_trans, axis=0)
+        aspect = data_range[0] / data_range[1]
+    if equalize_aspect:
+        data_trans[:,1] = data_trans[:,1] * aspect
+    data_thin, weights = thin_points(data_trans, **thin_params)
+    # Undo the transformations
+    if equalize_aspect:
+        data_thin[:,1] = data_thin[:,1] / aspect
+    if do_x_log:
+        data_thin[:,0] = np.exp(data_thin[:,0])
+    if do_y_log:
+        data_thin[:,1] = np.exp(data_thin[:,1])
+    return data_thin, weights
+
+
 def scatter_thin_points(data_thin, weights, method='size', ax=None,
                         **plot_args):
     """Make a scatterplot with a thinned set of points
@@ -165,7 +253,6 @@ def scatter_thin_points(data_thin, weights, method='size', ax=None,
                 'color', and 'alpha'
     ax          Existing axis to plot into, if any
     Any remaining keyword arguments are passed to pyplot.scatter().
-
     """
     if ax is None:
         ax = pyplot.gca()

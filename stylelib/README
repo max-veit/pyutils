@@ -1,0 +1,14 @@
+These style files go in ~/.config/matplotlib/stylelib (or the equivalent on
+non-Unix systems); to activate the corresponding style, just use
+
+    import matplotlib as mpl
+    mpl.style.use('notebook_view') # for example; other styles are available
+
+You may need to reload matplotlib, if it was already running, to get it to
+notice the new style files.
+
+Many of these styles require certain system fonts to be available.  At the very
+least, the Linux Libertine and Biolinum families are recommended; they can be
+dowloaded at libertine-fonts.org .
+
+# vim: set tw=79

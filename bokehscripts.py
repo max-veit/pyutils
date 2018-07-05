@@ -39,6 +39,12 @@ def plot_acorr(time, data, step_start, sample_dt, corr_guess,
                     (default 'Unnormalized autocorrelation C(t)')
                     Suggested format: 'Autocorrelation C(t) / <unit>^2'
         title       Title for the plot
+
+    Returns:
+        p           Bokeh plot object
+        mean        Mean of data in range (after `step_start`)
+        serr        Standard error on mean
+                    (accounting for autocorrelation)
     """
     print("Starting at time {:.2f}".format(time[step_start]))
     data_mean = np.mean(data[step_start:])
@@ -73,7 +79,7 @@ def plot_acorr(time, data, step_start, sample_dt, corr_guess,
     print("Correlation time (integrated): {:3g}".format(corr_time))
     print("Error on mean without correlation: {:3g}".format(np.std(data[step_start:]) / np.sqrt(n)))
     print("Estimated error on mean: {:3g}".format(serr_mean))
-    print("Number of effective independent samples: {:2f}".format(n / corr_time * sample_dt))
+    print("Number of effective independent samples: {:2f}".format(n / 2 / corr_time * sample_dt))
     print("Estimate with error: {:.4f} ± {:.4f}".format(data_mean, serr_mean))
     return p, data_mean, serr_mean
 

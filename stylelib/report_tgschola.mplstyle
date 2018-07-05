@@ -1,0 +1,9 @@
+font.family: TeX Gyre Schola
+font.size: 12
+legend.fontsize: large
+axes.labelsize: large
+font.serif: New Century Schoolbook, CMU Serif
+mathtext.default: regular
+pgf.texsystem: pdflatex
+pgf.preamble: \usepackage{siunitx}
+figure.figsize: 6.0, 3.7

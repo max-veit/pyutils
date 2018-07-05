@@ -1,0 +1,10 @@
+font.family: Linux Libertine
+font.size: 12
+legend.fontsize: large
+axes.labelsize: large
+xtick.labelsize: large
+ytick.labelsize: large
+mathtext.default: regular
+pgf.texsystem: pdflatex
+pgf.preamble: \usepackage{siunitx}
+figure.figsize: 6.0, 3.7

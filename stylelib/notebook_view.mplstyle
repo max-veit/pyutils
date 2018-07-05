@@ -1,0 +1,7 @@
+# Large size and different font style for easy viewing in a notebook
+font.size: 18
+font.family: Linux Biolinum
+legend.fontsize: large
+axes.labelsize: large
+lines.markersize: 8.0
+figure.figsize: 10.0, 6.0

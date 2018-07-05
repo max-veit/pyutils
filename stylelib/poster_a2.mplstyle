@@ -1,0 +1,8 @@
+font.size: 17
+font.family: serif
+font.serif: Linux Libertine, CMU Serif
+legend.fontsize: medium
+axes.labelsize: medium
+figure.subplot.bottom: 0.2
+figure.subplot.left: 0.2
+figure.figsize: 6.0, 4.0

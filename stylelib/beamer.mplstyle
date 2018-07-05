@@ -1,0 +1,9 @@
+lines.markersize: 15
+font.size: 15
+legend.fontsize: small
+axes.labelsize: large
+font.family: CMU Sans
+mathtext.default: regular
+pgf.texsystem: pdflatex
+pgf.preamble: \usepackage{siunitx}
+figure.figsize: 3.0, 2.5

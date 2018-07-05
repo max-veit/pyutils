@@ -1,0 +1,9 @@
+font.size: 25
+font.family: serif
+font.serif: Linux Libertine, CMU Serif
+legend.fontsize: large
+axes.labelsize: large
+figure.subplot.hspace: 0.1
+figure.subplot.wspace: 0.1
+lines.markersize: 20.0
+figure.figsize: 12.0, 8.0

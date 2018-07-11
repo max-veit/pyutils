@@ -215,10 +215,10 @@ def thin_transformed(data_full, equalize_aspect=True, aspect=None,
     Other keyword arguments are passed on to thin_points().  Note in
     particular that the 'r' parameter is in X axis units.
     """
-    if data.shape[1] != 2:
+    if data_full.shape[1] != 2:
         raise ValueError("This function is designed to work in 2-D space; "
                          "got data.shape[1] == {:d} instead.".format(
-                             data.shape[1]))
+                             data_full.shape[1]))
     data_trans = data_full.copy()
     if do_y_log:
         data_trans[:,1] = np.log(data_trans[:,1])

@@ -1,14 +1,14 @@
 # Based off of the ACS size specifications for a double-column figure
 font.family: Linux Libertine
 font.size: 12
-legend.fontsize: large
+legend.fontsize: medium
 axes.labelsize: large
-xtick.labelsize: large
-ytick.labelsize: large
+xtick.labelsize: medium
+ytick.labelsize: medium
 mathtext.default: regular
 pgf.texsystem: pdflatex
 pgf.preamble: \usepackage{siunitx}
 figure.figsize: 7, 4.5
 lines.linewidth: 1.0
-lines.markersize: 12
+lines.markersize: 6
 axes.labelpad: 2.0
